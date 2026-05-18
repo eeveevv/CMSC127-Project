@@ -9,8 +9,7 @@ Font stack: customtkinter default (scales cleanly on all platforms).
 
 import customtkinter as ctk
 from tkinter import messagebox, ttk
-import mysql.connector
-from mysql.connector import Error
+import pymysql
 
 from db_operations import (
     add_driver_db, get_drivers_db, edit_driver_db, delete_driver_db,
@@ -352,24 +351,27 @@ class LTOApp(ctk.CTk):
     # ── DB ────────────────────────────────────────────────────
     def _connect(self):
         try:
-            self.db = mysql.connector.connect(
+            self.db = pymysql.connect(
                 host=DB_CONFIG["host"],
                 user=DB_CONFIG["user"],
                 password=DB_CONFIG["password"],
                 database=DB_CONFIG["database"],
-                port=DB_CONFIG["port"]
+                port=DB_CONFIG["port"],
+                charset="utf8mb4",
+                autocommit=False,
+                cursorclass=pymysql.cursors.Cursor,
             )
 
             self.cur = self.db.cursor()
 
-        except Error as e:
+        except Exception as e:
             messagebox.showerror(
                 "Connection Error",
                 f"Could not connect to MySQL:\n\n{e}"
             )
 
     def _on_close(self):
-        if self.db and self.db.is_connected():
+        if self.db:
             self.cur.close()
             self.db.close()
         self.destroy()
@@ -532,7 +534,7 @@ class LTOApp(ctk.CTk):
             _page_header(f, "LTO Information Management System",
                          "Land Transportation Office · Philippines")
 
-            if not (self.db and self.db.is_connected()):
+            if not (self.db):
                 ctk.CTkLabel(f, text="⚠  Not connected to database.",
                              text_color=C["error"],
                              font=FONT_SECTION()).grid(

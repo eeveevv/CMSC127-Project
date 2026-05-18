@@ -8,7 +8,7 @@ violationSummary.violationYear, inactiveDrivers with address join, etc.)
 """
 
 import datetime
-from mysql.connector import Error
+import pymysql
 
 
 # ─────────────────────────────────────────────
@@ -58,7 +58,7 @@ def add_driver_db(conn, cursor, license_number, full_name, license_status,
     except ValueError:
         conn.rollback()
         return False, "Error: Invalid date format. Use YYYY-MM-DD."
-    except Error as e:
+    except Exception as e:
         conn.rollback()
         return False, f"Database error: {e}"
 
@@ -111,7 +111,7 @@ def get_drivers_db(conn, cursor, criteria=None):
     try:
         cursor.execute(query, tuple(params))
         return True, cursor.fetchall()
-    except Error as e:
+    except Exception as e:
         return False, f"Database error: {e}"
 
 
@@ -150,7 +150,7 @@ def edit_driver_db(conn, cursor, license_number, updates):
     except ValueError:
         conn.rollback()
         return False, "Error: Invalid date format. Use YYYY-MM-DD."
-    except Error as e:
+    except Exception as e:
         conn.rollback()
         return False, f"Database error: {e}"
 
@@ -172,9 +172,9 @@ def delete_driver_db(conn, cursor, license_number):
         )
         conn.commit()
         return True, f"Driver '{row[0]}' deleted successfully."
-    except Error as e:
+    except Exception as e:
         conn.rollback()
-        if e.errno == 1451:
+        if e.args[0] == 1451:
             return False, "Cannot delete: driver has linked vehicles or violations."
         return False, f"Database error: {e}"
 
@@ -203,7 +203,7 @@ def upsert_driver_address_db(conn, cursor, license_number, address, city, region
             """, (license_number, address, city, region))
         conn.commit()
         return True, "Address saved."
-    except Error as e:
+    except Exception as e:
         conn.rollback()
         return False, f"Database error: {e}"
 
@@ -229,11 +229,11 @@ def add_vehicle_db(conn, cursor, plate, engine, chassis, make, model,
         """, (plate, engine, chassis, make, model, color, vtype, year, license_number))
         conn.commit()
         return True, f"Vehicle '{plate}' added successfully."
-    except Error as e:
+    except Exception as e:
         conn.rollback()
-        if e.errno == 1452:
+        if e.args[0] == 1452:
             return False, "Error: License number does not exist."
-        if e.errno == 1062:
+        if e.args[0] == 1062:
             return False, "Error: Engine or chassis number already registered."
         return False, f"Database error: {e}"
 
@@ -273,7 +273,7 @@ def get_vehicles_db(conn, cursor, criteria=None):
     try:
         cursor.execute(query, tuple(params))
         return True, cursor.fetchall()
-    except Error as e:
+    except Exception as e:
         return False, f"Database error: {e}"
 
 
@@ -292,7 +292,7 @@ def edit_vehicle_db(conn, cursor, plate, updates):
         )
         conn.commit()
         return True, "Vehicle updated successfully."
-    except Error as e:
+    except Exception as e:
         conn.rollback()
         return False, f"Database error: {e}"
 
@@ -309,9 +309,9 @@ def delete_vehicle_db(conn, cursor, plate):
         cursor.execute("DELETE FROM vehicle WHERE plateNumber = %s", (plate,))
         conn.commit()
         return True, f"Vehicle '{row[0]} {row[1]}' deleted successfully."
-    except Error as e:
+    except Exception as e:
         conn.rollback()
-        if e.errno == 1451:
+        if e.args[0] == 1451:
             return False, "Cannot delete: vehicle has linked registrations or violations."
         return False, f"Database error: {e}"
 
@@ -336,9 +336,9 @@ def add_registration_db(conn, cursor, reg_number, plate, status, reg_date, exp_d
         """, (reg_number, plate, status, reg_date, exp_date))
         conn.commit()
         return True, "Registration added successfully."
-    except Error as e:
+    except Exception as e:
         conn.rollback()
-        if e.errno == 1452:
+        if e.args[0] == 1452:
             return False, "Error: Plate number does not exist."
         return False, f"Database error: {e}"
 
@@ -364,7 +364,7 @@ def get_registrations_db(conn, cursor, plate=None):
     try:
         cursor.execute(query, tuple(params))
         return True, cursor.fetchall()
-    except Error as e:
+    except Exception as e:
         return False, f"Database error: {e}"
 
 
@@ -384,7 +384,7 @@ def edit_registration_db(conn, cursor, reg_number, updates):
         )
         conn.commit()
         return True, "Registration updated successfully."
-    except Error as e:
+    except Exception as e:
         conn.rollback()
         return False, f"Database error: {e}"
 
@@ -403,7 +403,7 @@ def delete_registration_db(conn, cursor, reg_number):
         )
         conn.commit()
         return True, "Registration deleted successfully."
-    except Error as e:
+    except Exception as e:
         conn.rollback()
         return False, f"Database error: {e}"
 
@@ -442,9 +442,9 @@ def add_violation_db(conn, cursor, vio_id, license_number, plate,
 
         conn.commit()
         return True, "Violation recorded successfully."
-    except Error as e:
+    except Exception as e:
         conn.rollback()
-        if e.errno == 1452:
+        if e.args[0] == 1452:
             return False, "Error: License number or plate number does not exist."
         return False, f"Database error: {e}"
 
@@ -488,7 +488,7 @@ def get_violations_db(conn, cursor, criteria=None):
     try:
         cursor.execute(query, tuple(params))
         return True, cursor.fetchall()
-    except Error as e:
+    except Exception as e:
         return False, f"Database error: {e}"
 
 
@@ -507,7 +507,7 @@ def edit_violation_db(conn, cursor, vio_id, updates):
         )
         conn.commit()
         return True, "Violation updated successfully."
-    except Error as e:
+    except Exception as e:
         conn.rollback()
         return False, f"Database error: {e}"
 
@@ -524,7 +524,7 @@ def delete_violation_db(conn, cursor, vio_id):
         cursor.execute("DELETE FROM violation WHERE violationId = %s", (vio_id,))
         conn.commit()
         return True, "Violation deleted successfully."
-    except Error as e:
+    except Exception as e:
         conn.rollback()
         return False, f"Database error: {e}"
 
@@ -566,7 +566,7 @@ def report_all_drivers(conn, cursor, license_type=None, license_status=None,
     try:
         cursor.execute(query, tuple(params))
         return True, cursor.fetchall()
-    except Error as e:
+    except Exception as e:
         return False, f"Database error: {e}"
 
 
@@ -581,7 +581,7 @@ def report_vehicles_by_driver(conn, cursor, license_number):
             (license_number,)
         )
         return True, cursor.fetchall()
-    except Error as e:
+    except Exception as e:
         return False, f"Database error: {e}"
 
 
@@ -613,7 +613,7 @@ def report_expired_vehicles(conn, cursor, as_of_date=None):
                 ORDER BY expirationDate
             """)
         return True, cursor.fetchall()
-    except Error as e:
+    except Exception as e:
         return False, f"Database error: {e}"
 
 
@@ -628,7 +628,7 @@ def report_inactive_drivers(conn, cursor):
     try:
         cursor.execute("SELECT * FROM inactiveDrivers ORDER BY fullName")
         return True, cursor.fetchall()
-    except Error as e:
+    except Exception as e:
         return False, f"Database error: {e}"
 
 
@@ -654,7 +654,7 @@ def report_violations_by_driver(conn, cursor, license_number,
     try:
         cursor.execute(query, tuple(params))
         return True, cursor.fetchall()
-    except Error as e:
+    except Exception as e:
         return False, f"Database error: {e}"
 
 
@@ -670,7 +670,7 @@ def report_violation_summary(conn, cursor, year):
             (year,)
         )
         return True, cursor.fetchall()
-    except Error as e:
+    except Exception as e:
         return False, f"Database error: {e}"
 
 
@@ -694,7 +694,7 @@ def report_vehicles_in_violations_by_location(conn, cursor, city=None, region=No
     try:
         cursor.execute(query, tuple(params))
         return True, cursor.fetchall()
-    except Error as e:
+    except Exception as e:
         return False, f"Database error: {e}"
 
 
@@ -707,7 +707,7 @@ def get_all_plate_numbers(conn, cursor):
     try:
         cursor.execute("SELECT plateNumber FROM vehicle ORDER BY plateNumber")
         return [row[0] for row in cursor.fetchall()]
-    except Error:
+    except Exception:
         return []
 
 
@@ -718,5 +718,5 @@ def get_all_license_numbers(conn, cursor):
             "SELECT licenseNumber, fullName FROM driver ORDER BY fullName"
         )
         return cursor.fetchall()
-    except Error:
+    except Exception:
         return []
