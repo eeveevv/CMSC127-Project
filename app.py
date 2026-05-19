@@ -6,6 +6,7 @@ CMSC 127 | 2nd Semester AY 2025-2026
 Visual theme: Philippine government deep navy + gold accent + crisp white cards.
 Font stack: customtkinter default (scales cleanly on all platforms).
 """
+#test, start na me guys -Paulo
 
 import customtkinter as ctk
 from tkinter import messagebox, ttk
