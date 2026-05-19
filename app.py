@@ -1111,14 +1111,14 @@ class LTOApp(ctk.CTk):
                          "Load a vehicle by plate number to modify its record")
 
             _lf(f, "Plate Number:", 1, 0)
-            e_plate = _ef(f, 1, 1)
+            plate_var, plate_menu = _om(f, plates, 1, 1)
             stat = _status_lbl(f, 2, 0)
 
             inner = ctk.CTkFrame(f, fg_color=C["card"],
-                                 corner_radius=8,
-                                 border_width=1, border_color=C["card_border"])
+                                corner_radius=8,
+                                border_width=1, border_color=C["card_border"])
             inner.grid(row=3, column=0, columnspan=2,
-                       sticky="ew", padx=0, pady=8)
+                    sticky="ew", padx=0, pady=8)
             inner.grid_columnconfigure(1, weight=1)
             entries  = {}
             vars_map = {}
@@ -1128,12 +1128,12 @@ class LTOApp(ctk.CTk):
                     w.destroy()
                 entries.clear()
                 vars_map.clear()
-                plate = e_plate.get().strip()
+                plate = plate_var.get().strip()
                 if not plate:
-                    _set_status(stat, "Enter a plate number.", False)
+                    _set_status(stat, "Select a plate number.", False)
                     return
                 ok, rows = get_vehicles_db(self.db, self.cur,
-                                           {"plateNumber": plate})
+                                        {"plateNumber": plate})
                 if not ok or not rows:
                     _set_status(stat, "Vehicle not found.", False)
                     return
@@ -1141,7 +1141,7 @@ class LTOApp(ctk.CTk):
                 _set_status(stat, f"Loaded: {r[3]} {r[4]} ({r[0]})", True)
 
                 ef = [("Make","make",r[3]),("Model","model",r[4]),
-                      ("Color","color",r[5]),("Year","year",str(r[7]))]
+                    ("Color","color",r[5]),("Year","year",str(r[7]))]
                 for i, (lbl, key, val) in enumerate(ef):
                     _lf(inner, lbl + ":", i, 0)
                     e = _ef(inner, i, 1)
@@ -1155,7 +1155,7 @@ class LTOApp(ctk.CTk):
 
                 def save():
                     upd = {k: v.get().strip()
-                           for k, v in entries.items() if v.get().strip()}
+                        for k, v in entries.items() if v.get().strip()}
                     upd["type"] = vars_map["type"].get()
                     if "year" in upd:
                         try:
@@ -1167,9 +1167,9 @@ class LTOApp(ctk.CTk):
                     _set_status(stat, msg, ok2)
 
                 _btn(inner, "💾  Save Changes", save, len(ef) + 1, 0,
-                     colspan=2)
+                    colspan=2)
 
-            _btn(f, "⬇  Load Vehicle", load, 1, 1, style="secondary")
+            _btn(f, "⬇  Load Vehicle", load, 0, 1, style="secondary")
 
         self._switch(build)
 
@@ -1286,9 +1286,11 @@ class LTOApp(ctk.CTk):
             _page_header(f, "Edit Registration",
                          "Load a registration by number to modify it")
 
+            row=1
             _lf(f, "Registration Number:", 1, 0)
             e_reg = _ef(f, 1, 1)
             stat = _status_lbl(f, 2, 0)
+            row += 2
 
             inner = ctk.CTkFrame(f, fg_color=C["card"],
                                  corner_radius=8,
@@ -1342,7 +1344,7 @@ class LTOApp(ctk.CTk):
                 _btn(inner, "💾  Save Changes", save,
                      len(ef) + 1, 0, colspan=2)
 
-            _btn(f, "⬇  Load Registration", load, 1, 1, style="secondary")
+            _btn(f, "⬇  Load Registration", load, 0, 1, style="secondary")
 
         self._switch(build)
 
@@ -1517,9 +1519,11 @@ class LTOApp(ctk.CTk):
             _page_header(f, "Edit Violation",
                          "Load a violation by ID to modify it")
 
+            row = 1
             _lf(f, "Violation ID:", 1, 0)
             e_vid = _ef(f, 1, 1)
             stat = _status_lbl(f, 2, 0)
+            row += 2
 
             inner = ctk.CTkFrame(f, fg_color=C["card"],
                                  corner_radius=8,
@@ -1582,7 +1586,7 @@ class LTOApp(ctk.CTk):
                 _btn(inner, "💾  Save Changes", save,
                      len(ef) + 1, 0, colspan=2)
 
-            _btn(f, "⬇  Load Violation", load, 1, 1, style="secondary")
+            _btn(f, "⬇  Load Violation", load, 0, 1, style="secondary")
 
         self._switch(build)
 
