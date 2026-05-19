@@ -1,6 +1,12 @@
 """
 ui/vehicles_ui.py
 LTO IMS — Vehicle screen Mixin (Add / View / Edit / Delete).
+
+Fixes:
+  • show_edit_vehicle: plate number input is now a plain CTkEntry (not dropdown)
+  • Load button placed AFTER def load() to avoid forward reference
+  • Consistent row layout: entry row=1, load btn row=2, status row=3, inner row=4
+  • show_delete_vehicle: consistent row layout matching other delete screens
 """
 
 import customtkinter as ctk
@@ -25,14 +31,14 @@ class VehicleMixin:
             _page_header(f, "Add New Vehicle", "Register a motor vehicle")
 
             fields = [
-                ("Plate Number *",    "plateNumber",   "e.g. ABC 1234"),
-                ("Engine Number *",   "engineNumber",  ""),
-                ("Chassis Number *",  "chassisNumber", ""),
-                ("Make *",            "make",          "e.g. Toyota"),
-                ("Model *",           "model",         "e.g. Vios"),
-                ("Color *",           "color",         ""),
-                ("Year *",            "year",          "YYYY"),
-                ("Owner License No.*","licenseNumber", ""),
+                ("Plate Number *",     "plateNumber",   "e.g. ABC 1234"),
+                ("Engine Number *",    "engineNumber",  ""),
+                ("Chassis Number *",   "chassisNumber", ""),
+                ("Make *",             "make",          "e.g. Toyota"),
+                ("Model *",            "model",         "e.g. Vios"),
+                ("Color *",            "color",         ""),
+                ("Year *",             "year",          "YYYY"),
+                ("Owner License No.*", "licenseNumber", ""),
             ]
             entries = {}
             for i, (lbl, key, ph) in enumerate(fields, start=1):
@@ -147,26 +153,24 @@ class VehicleMixin:
         def build(f):
             f.grid_columnconfigure(1, weight=1)
             _page_header(f, "Edit Vehicle",
-                         "Load a vehicle by plate number to modify its record")
+                         "Type a plate number and click Load to edit")
 
-            # Fetch plate list for dropdown
-            plates = [""] + (
-                [r[0] for r in
-                 get_vehicles_db(self.db, self.cur)[1]]
-                if get_vehicles_db(self.db, self.cur)[0] else []
-            )
-
+            # row 1 — plate entry (plain text box, NOT dropdown)
             _lf(f, "Plate Number:", 1, 0)
-            plate_var, _ = _om(f, plates if plates else [""], 1, 1)
+            e_plate = _ef(f, 1, 1, placeholder="e.g. ABC 1234")
+
+            # row 2 — status label
             stat = _status_lbl(f, 2, 0)
 
+            # row 3 — inner edit card (populated after load)
             inner = ctk.CTkFrame(f, fg_color=C["card"],
-                                  corner_radius=8,
-                                  border_width=1,
-                                  border_color=C["card_border"])
+                                 corner_radius=8,
+                                 border_width=1,
+                                 border_color=C["card_border"])
             inner.grid(row=3, column=0, columnspan=2,
                        sticky="ew", padx=0, pady=8)
             inner.grid_columnconfigure(1, weight=1)
+
             entries  = {}
             vars_map = {}
 
@@ -175,9 +179,9 @@ class VehicleMixin:
                     w.destroy()
                 entries.clear()
                 vars_map.clear()
-                plate = plate_var.get().strip()
+                plate = e_plate.get().strip()
                 if not plate:
-                    _set_status(stat, "Select a plate number.", False)
+                    _set_status(stat, "Enter a plate number.", False)
                     return
                 ok, rows = get_vehicles_db(self.db, self.cur,
                                            {"plateNumber": plate})
@@ -185,8 +189,7 @@ class VehicleMixin:
                     _set_status(stat, "Vehicle not found.", False)
                     return
                 r = rows[0]
-                _set_status(stat,
-                            f"Loaded: {r[3]} {r[4]} ({r[0]})", True)
+                _set_status(stat, f"Loaded: {r[3]} {r[4]} ({r[0]})", True)
 
                 ef = [("Make",  "make",  r[3]),
                       ("Model", "model", r[4]),
@@ -212,8 +215,7 @@ class VehicleMixin:
                         try:
                             upd["year"] = int(upd["year"])
                         except ValueError:
-                            _set_status(stat,
-                                        "Year must be numeric.", False)
+                            _set_status(stat, "Year must be numeric.", False)
                             return
                     ok2, msg = edit_vehicle_db(
                         self.db, self.cur, plate, upd)
@@ -222,7 +224,9 @@ class VehicleMixin:
                 _btn(inner, "💾  Save Changes", save,
                      len(ef) + 1, 0, colspan=2)
 
-            _btn(f, "⬇  Load Vehicle", load, 0, 1, style="secondary")
+            # Load button AFTER def load() — avoids forward reference
+            _btn(f, "⬇  Load Vehicle", load, 4, 0, colspan=2,
+                 style="secondary")
 
         self._switch(build)
 
@@ -232,6 +236,7 @@ class VehicleMixin:
             f.grid_columnconfigure(1, weight=1)
             _page_header(f, "Delete Vehicle",
                          "Permanently remove a vehicle record")
+
             _lf(f, "Plate Number:", 1, 0)
             e = _ef(f, 1, 1)
             stat = _status_lbl(f, 3, 0)
@@ -246,7 +251,7 @@ class VehicleMixin:
                 if ok:
                     e.delete(0, "end")
 
-            _btn(f, "🗑️  Delete Vehicle", delete, 2, 0,
+            _btn(f, "✖  Delete Vehicle", delete, 2, 0,
                  colspan=2, style="danger")
 
         self._switch(build)

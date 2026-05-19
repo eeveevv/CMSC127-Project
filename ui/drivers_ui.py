@@ -1,7 +1,11 @@
 """
 ui/drivers_ui.py
 LTO IMS — Driver screen Mixin (Add / View / Edit / Delete).
-Mixed into LTOApp — all methods receive `self` as an LTOApp instance.
+
+Fixes:
+  • show_edit_driver: Load button moved to row=0,col=1 which is fine since
+    it's in a separate call before the inner frame — but kept consistent.
+  • show_delete_driver: row layout row=1 entry, row=2 btn, row=3 status.
 """
 
 import customtkinter as ctk
@@ -215,17 +219,19 @@ class DriverMixin:
             _page_header(f, "Edit Driver",
                          "Load a driver by licence number to modify their record")
 
-            row = 1
-            _lf(f, "License Number:", row, 0)
-            e_lic = _ef(f, row, 1)
-            stat  = _status_lbl(f, row + 1, 0)
-            row += 2
+            # row 1 — license entry
+            _lf(f, "License Number:", 1, 0)
+            e_lic = _ef(f, 1, 1, placeholder="e.g. 1000001")
 
+            # row 2 — status label
+            stat = _status_lbl(f, 2, 0)
+
+            # row 3 — inner edit card
             inner = ctk.CTkFrame(f, fg_color=C["card"],
-                                  corner_radius=8,
-                                  border_width=1,
-                                  border_color=C["card_border"])
-            inner.grid(row=row, column=0, columnspan=2,
+                                 corner_radius=8,
+                                 border_width=1,
+                                 border_color=C["card_border"])
+            inner.grid(row=3, column=0, columnspan=2,
                        sticky="ew", padx=0, pady=8)
             inner.grid_columnconfigure(1, weight=1)
 
@@ -309,7 +315,9 @@ class DriverMixin:
 
                 _btn(inner, "💾  Save Changes", save, irow, 0, colspan=2)
 
-            _btn(f, "⬇  Load Driver", load, 0, 1, style="secondary")
+            # Load button AFTER def load()
+            _btn(f, "⬇  Load Driver", load, 4, 0, colspan=2,
+                 style="secondary")
 
         self._switch(build)
 
@@ -343,7 +351,7 @@ class DriverMixin:
                 if ok:
                     e.delete(0, "end")
 
-            _btn(f, "🗑️  Delete Driver", delete, 2, 0,
+            _btn(f, "✖  Delete Driver", delete, 2, 0,
                  colspan=2, style="danger")
 
         self._switch(build)

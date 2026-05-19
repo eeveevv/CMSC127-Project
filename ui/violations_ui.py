@@ -1,6 +1,11 @@
 """
 ui/violations_ui.py
 LTO IMS — Violation screen Mixin (Add / View / Edit / Delete).
+
+Fixes:
+  • show_edit_violation: Load button placed AFTER def load()
+  • Consistent row layout: entry row=1, status row=2, inner row=3, load btn row=4
+  • show_delete_violation: consistent row layout
 """
 
 import customtkinter as ctk
@@ -158,19 +163,24 @@ class ViolationMixin:
         def build(f):
             f.grid_columnconfigure(1, weight=1)
             _page_header(f, "Edit Violation",
-                         "Load a violation by ID to modify it")
+                         "Type a violation ID and click Load to edit")
 
+            # row 1 — violation ID entry
             _lf(f, "Violation ID:", 1, 0)
-            e_vid = _ef(f, 1, 1)
+            e_vid = _ef(f, 1, 1, placeholder="e.g. VIO-001")
+
+            # row 2 — status label
             stat = _status_lbl(f, 2, 0)
 
+            # row 3 — inner edit card
             inner = ctk.CTkFrame(f, fg_color=C["card"],
-                                  corner_radius=8,
-                                  border_width=1,
-                                  border_color=C["card_border"])
+                                 corner_radius=8,
+                                 border_width=1,
+                                 border_color=C["card_border"])
             inner.grid(row=3, column=0, columnspan=2,
                        sticky="ew", padx=0, pady=8)
             inner.grid_columnconfigure(1, weight=1)
+
             entries  = {}
             vars_map = {}
 
@@ -228,7 +238,9 @@ class ViolationMixin:
                 _btn(inner, "💾  Save Changes", save,
                      len(ef) + 1, 0, colspan=2)
 
-            _btn(f, "⬇  Load Violation", load, 0, 1, style="secondary")
+            # Load button AFTER def load()
+            _btn(f, "⬇  Load Violation", load, 4, 0, colspan=2,
+                 style="secondary")
 
         self._switch(build)
 
@@ -238,6 +250,7 @@ class ViolationMixin:
             f.grid_columnconfigure(1, weight=1)
             _page_header(f, "Delete Violation",
                          "Permanently remove a violation record")
+
             _lf(f, "Violation ID:", 1, 0)
             e = _ef(f, 1, 1)
             stat = _status_lbl(f, 3, 0)
@@ -252,7 +265,7 @@ class ViolationMixin:
                 if ok:
                     e.delete(0, "end")
 
-            _btn(f, "🗑️  Delete Violation", delete, 2, 0,
+            _btn(f, "✖  Delete Violation", delete, 2, 0,
                  colspan=2, style="danger")
 
         self._switch(build)

@@ -2,12 +2,11 @@
 ui/app.py
 LTO IMS — LTOApp core class.
 
-Responsibilities:
-  • Window setup & DB connection
-  • Sidebar navigation
-  • _switch() / _result_area() shared helpers
-  • Dashboard screen
-  • Inherits all module screens via Mixins
+Fixes:
+  • Sidebar highlight bug: nav_buttons now keyed by unique ID (label+section),
+    not by label text — so "View / Search" under Drivers, Vehicles,
+    Registrations, Violations no longer overwrite each other.
+  • Delete screens: consistent row layout (entry row=1, btn row=2, stat row=3).
 """
 
 import customtkinter as ctk
@@ -16,11 +15,11 @@ import pymysql
 
 from config import C, DB_CONFIG, FONT_TITLE, FONT_SECTION, FONT_LABEL, FONT_SMALL
 from ui.widgets import _page_header, _treeview
-from ui.drivers_ui      import DriverMixin
-from ui.vehicles_ui     import VehicleMixin
+from ui.drivers_ui       import DriverMixin
+from ui.vehicles_ui      import VehicleMixin
 from ui.registrations_ui import RegistrationMixin
-from ui.violations_ui   import ViolationMixin
-from ui.reports_ui      import ReportMixin
+from ui.violations_ui    import ViolationMixin
+from ui.reports_ui       import ReportMixin
 
 
 class LTOApp(
@@ -80,9 +79,12 @@ class LTOApp(
             )
 
     def _on_close(self):
-        if self.db:
-            self.cur.close()
-            self.db.close()
+        try:
+            if self.db:
+                self.cur.close()
+                self.db.close()
+        except Exception:
+            pass
         self.destroy()
 
     # ── Sidebar ───────────────────────────────────────────────
@@ -119,55 +121,59 @@ class LTOApp(
         )
         scroll.pack(fill="both", expand=True, padx=6, pady=4)
 
+        # Each nav item: (unique_key, display_label, cmd_or_None, icon_or_None)
+        # unique_key is used as the dict key — avoids collision on same label text
         sections = [
-            ("DRIVERS",         None),
-            ("  Dashboard",     (self.show_dashboard,          "🏠")),
-            ("  Add Driver",    (self.show_add_driver,          "➕")),
-            ("  View / Search", (self.show_view_drivers,        "🔍")),
-            ("  Edit Driver",   (self.show_edit_driver,         "✏️")),
-            ("  Delete Driver", (self.show_delete_driver,       "🗑️")),
-            ("VEHICLES",        None),
-            ("  Add Vehicle",   (self.show_add_vehicle,         "➕")),
-            ("  View / Search", (self.show_view_vehicles,       "🔍")),
-            ("  Edit Vehicle",  (self.show_edit_vehicle,        "✏️")),
-            ("  Delete Vehicle",(self.show_delete_vehicle,      "🗑️")),
-            ("REGISTRATIONS",   None),
-            ("  Add Reg.",      (self.show_add_registration,    "➕")),
-            ("  View / Search", (self.show_view_registrations,  "🔍")),
-            ("  Edit Reg.",     (self.show_edit_registration,   "✏️")),
-            ("  Delete Reg.",   (self.show_delete_registration, "🗑️")),
-            ("VIOLATIONS",      None),
-            ("  Add Violation", (self.show_add_violation,       "➕")),
-            ("  View / Search", (self.show_view_violations,     "🔍")),
-            ("  Edit Violation",(self.show_edit_violation,      "✏️")),
-            ("  Delete Violation",(self.show_delete_violation,  "🗑️")),
-            ("REPORTS",         None),
-            ("  R1: All Drivers",  (self.show_report1, "📋")),
-            ("  R2: By Driver",    (self.show_report2, "🚘")),
-            ("  R3: Expired Reg.", (self.show_report3, "📅")),
-            ("  R4: Inactive",     (self.show_report4, "⚠️")),
-            ("  R5: Violations",   (self.show_report5, "🚨")),
-            ("  R6: Summary",      (self.show_report6, "📊")),
-            ("  R7: By Location",  (self.show_report7, "📍")),
+            # ── section headers (cmd=None) ──
+            ("hdr_drivers",       "DRIVERS",        None,                          None),
+            ("dashboard",         "  Dashboard",    self.show_dashboard,           "🏠"),
+            ("add_driver",        "  Add Driver",   self.show_add_driver,          "➕"),
+            ("view_drivers",      "  View / Search",self.show_view_drivers,        "🔍"),
+            ("edit_driver",       "  Edit Driver",  self.show_edit_driver,         "✏️"),
+            ("delete_driver",     "  Delete Driver",self.show_delete_driver,       "✖"),
+            ("hdr_vehicles",      "VEHICLES",       None,                          None),
+            ("add_vehicle",       "  Add Vehicle",  self.show_add_vehicle,         "➕"),
+            ("view_vehicles",     "  View / Search",self.show_view_vehicles,       "🔍"),
+            ("edit_vehicle",      "  Edit Vehicle", self.show_edit_vehicle,        "✏️"),
+            ("delete_vehicle",    "  Delete Vehicle",self.show_delete_vehicle,     "✖"),
+            ("hdr_regs",          "REGISTRATIONS",  None,                          None),
+            ("add_reg",           "  Add Reg.",     self.show_add_registration,    "➕"),
+            ("view_regs",         "  View / Search",self.show_view_registrations,  "🔍"),
+            ("edit_reg",          "  Edit Reg.",    self.show_edit_registration,   "✏️"),
+            ("delete_reg",        "  Delete Reg.",  self.show_delete_registration, "✖"),
+            ("hdr_violations",    "VIOLATIONS",     None,                          None),
+            ("add_violation",     "  Add Violation",self.show_add_violation,       "➕"),
+            ("view_violations",   "  View / Search",self.show_view_violations,     "🔍"),
+            ("edit_violation",    "  Edit Violation",self.show_edit_violation,     "✏️"),
+            ("delete_violation",  "  Delete Violation",self.show_delete_violation, "✖"),
+            ("hdr_reports",       "REPORTS",        None,                          None),
+            ("report1",           "  R1: All Drivers",  self.show_report1,         "📋"),
+            ("report2",           "  R2: By Driver",    self.show_report2,         "🚘"),
+            ("report3",           "  R3: Expired Reg.", self.show_report3,         "📅"),
+            ("report4",           "  R4: Inactive",     self.show_report4,         "⚠️"),
+            ("report5",           "  R5: Violations",   self.show_report5,         "🚨"),
+            ("report6",           "  R6: Summary",      self.show_report6,         "📊"),
+            ("report7",           "  R7: By Location",  self.show_report7,         "📍"),
         ]
 
+        # _nav_buttons keyed by unique_key, not by display label
         self._nav_buttons = {}
 
-        for label, action in sections:
-            if action is None:
+        for unique_key, display_label, cmd, icon in sections:
+            if cmd is None:
+                # Section header
                 ctk.CTkLabel(
-                    scroll, text=label,
+                    scroll, text=display_label,
                     font=ctk.CTkFont(
                         family="Segoe UI", size=9, weight="bold"),
                     text_color=C["sidebar_accent"],
                     anchor="w",
                 ).pack(fill="x", padx=8, pady=(12, 2))
             else:
-                cmd, icon = action
                 btn = ctk.CTkButton(
                     scroll,
-                    text=f"{icon}  {label.strip()}",
-                    command=lambda c=cmd, b=label: self._nav(c, b),
+                    text=f"{icon}  {display_label.strip()}",
+                    command=lambda c=cmd, k=unique_key: self._nav(c, k),
                     anchor="w",
                     height=30,
                     corner_radius=6,
@@ -177,16 +183,17 @@ class LTOApp(
                     text_color=C["sidebar_text"],
                 )
                 btn.pack(fill="x", padx=4, pady=1)
-                self._nav_buttons[label] = btn
+                self._nav_buttons[unique_key] = btn
 
-    def _nav(self, cmd, label):
+    def _nav(self, cmd, unique_key):
+        # Deselect previous button
         if self._active_btn and self._active_btn in \
                 self._nav_buttons.values():
             self._active_btn.configure(
                 fg_color="transparent",
                 text_color=C["sidebar_text"],
             )
-        btn = self._nav_buttons.get(label)
+        btn = self._nav_buttons.get(unique_key)
         if btn:
             btn.configure(fg_color=C["sidebar_sel"],
                           text_color="#FFFFFF")
@@ -208,7 +215,6 @@ class LTOApp(
 
     # ── Result table frame ────────────────────────────────────
     def _result_area(self, parent, row, colspan=4):
-        """Returns a frame ready for _treeview()."""
         outer = ctk.CTkFrame(
             parent, fg_color=C["card"],
             corner_radius=8,
@@ -235,7 +241,6 @@ class LTOApp(
                     row=1, column=0, pady=20)
                 return
 
-            # Summary tiles
             try:
                 counts = {}
                 for tbl in ("driver", "vehicle", "registration", "violation"):
@@ -276,7 +281,6 @@ class LTOApp(
                              text_color="#DBEAFE").grid(
                     row=2, column=0, pady=(0, 18))
 
-            # Info cards row
             info_row = ctk.CTkFrame(f, fg_color="transparent")
             info_row.grid(row=2, column=0, sticky="ew", pady=(0, 12))
             info_row.grid_columnconfigure(0, weight=1)
