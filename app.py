@@ -1110,9 +1110,11 @@ class LTOApp(ctk.CTk):
             _page_header(f, "Edit Vehicle",
                          "Load a vehicle by plate number to modify its record")
 
+            row = 1
             _lf(f, "Plate Number:", 1, 0)
             plate_var, plate_menu = _om(f, plates, 1, 1)
             stat = _status_lbl(f, 2, 0)
+            row += 2
 
             inner = ctk.CTkFrame(f, fg_color=C["card"],
                                 corner_radius=8,
