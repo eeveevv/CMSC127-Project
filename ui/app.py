@@ -98,7 +98,7 @@ class LTOApp(
         logo_frame = ctk.CTkFrame(sb, fg_color="transparent")
         logo_frame.pack(fill="x", padx=14, pady=(20, 6))
         ctk.CTkLabel(logo_frame, text="🚗",
-                     font=ctk.CTkFont(size=28)).pack(side="left", padx=(0, 8))
+                     font=ctk.CTkFont(size=28),text_color="#FFD700").pack(side="left", padx=(0, 8))
         title_v = ctk.CTkFrame(logo_frame, fg_color="transparent")
         title_v.pack(side="left")
         ctk.CTkLabel(title_v, text="LTO System",
