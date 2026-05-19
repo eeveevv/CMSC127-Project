@@ -29,10 +29,10 @@ class DriverMixin:
         def build(f):
             f.grid_columnconfigure(1, weight=1)
             _page_header(f, "Add New Driver",
-                         "Create a driver licence record")
+                         "Create a driver license record")
 
             row = 1
-            _section_label(f, "LICENCE INFORMATION", row)
+            _section_label(f, "LICENSE INFORMATION", row)
             row += 1
 
             _lf(f, "License Number *", row, 0)
@@ -217,7 +217,7 @@ class DriverMixin:
         def build(f):
             f.grid_columnconfigure(1, weight=1)
             _page_header(f, "Edit Driver",
-                         "Load a driver by licence number to modify their record")
+                         "Load a driver by license number to modify their record")
 
             # row 1 — license entry
             _lf(f, "License Number:", 1, 0)

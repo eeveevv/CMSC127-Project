@@ -76,7 +76,7 @@ class ReportMixin:
         def build(f):
             f.grid_columnconfigure(1, weight=1)
             _page_header(f, "Report 2 — Vehicles Owned by a Driver",
-                         "Enter a licence number to list all registered vehicles")
+                         "Enter a license number to list all registered vehicles")
 
             _lf(f, "License Number:", 1, 0)
             e_lic = _ef(f, 1, 1)
@@ -149,7 +149,7 @@ class ReportMixin:
             _page_header(
                 f,
                 "Report 4 — Inactive Drivers",
-                "Drivers with Expired, Suspended, or Revoked licences"
+                "Drivers with Expired, Suspended, or Revoked licenses"
             )
 
             stat_lbl = _status_lbl(f, 2, 0)
